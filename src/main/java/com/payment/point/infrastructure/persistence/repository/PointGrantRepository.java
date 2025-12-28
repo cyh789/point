@@ -1,0 +1,16 @@
+package com.payment.point.infrastructure.persistence.repository;
+
+import com.payment.point.infrastructure.persistence.entity.PointGrantEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+public interface PointGrantRepository extends JpaRepository<PointGrantEntity, Long> {
+
+    @Query("""
+        SELECT COALESCE(SUM(pg.remainingAmount), 0)
+        FROM PointGrantEntity pg
+        WHERE pg.userId = :userId
+          AND pg.expireAt > CURRENT_TIMESTAMP
+    """)
+    int sumRemainingAmountByUserId(Long userId);
+}
