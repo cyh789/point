@@ -17,7 +17,7 @@ application-dev.yml
 
 
 ### 패키지 구조
-
+'''
 com.payment.point
 │
 ├── api                                # Presentation Layer
@@ -45,7 +45,7 @@ com.payment.point
 └── policy
 ├── PointPolicyEntity      # 포인트 정책 엔티티
 └── PointPolicyJpaRepository
-
+'''
 
 ### devdb 테스트 샘플
 $ ./gradlew bootRun --args='--spring.profiles.active=dev'
