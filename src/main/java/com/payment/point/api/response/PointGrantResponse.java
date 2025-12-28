@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 public class PointGrantResponse {
 
     private Long grantId;
-    private int totalAmount;
-    private int remainingAmount;
+    private Long grantedAmount;
+    private Long remainingAmount;
     private String grantType;
-    private LocalDateTime expireAt;
+    private LocalDateTime expireDate;
+    private String status;
+    private String reason;
 }

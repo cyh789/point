@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 public class GrantPointRequest {
 
     private Long userId;
-    private int amount;
+    private Long amount;
     private String grantType; // AUTO, MANUAL
-    private LocalDateTime expireAt; // optional
+    private LocalDateTime expireDate; // optional
+    private String reason; // optional
 }

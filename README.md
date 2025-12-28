@@ -70,5 +70,5 @@ $ curl -X POST http://localhost:8080/points/grants \
 "userId": 1,
 "amount": 1000
 }'
-{"grantId":2,"totalAmount":1000,"remainingAmount":1000,"grantType":null,"expireAt":"2026-12-28T17:10:40.4410619"}
+{"grantId":2,"totalAmount":1000,"remainingAmount":1000,"grantType":null,"expireDate":"2026-12-28T17:10:40.4410619"}
 ```

@@ -27,8 +27,8 @@ public class PointPolicyValidator {
         }
     }
 
-    public void validateExpireAt(LocalDateTime expireAt) {
-        if (expireAt == null) {
+    public void validateExpireDate(LocalDateTime expireDate) {
+        if (expireDate == null) {
             throw new IllegalArgumentException("만료일은 필수입니다.");
         }
 
@@ -37,16 +37,16 @@ public class PointPolicyValidator {
         int minDays = Integer.parseInt(policyReader.getMinExpireDays());
         int maxDays = Integer.parseInt(policyReader.getMaxExpireDays());
 
-        LocalDateTime minExpireAt = now.plusDays(minDays);
-        LocalDateTime maxExpireAt = now.plusDays(maxDays);
+        LocalDateTime minexpireDate = now.plusDays(minDays);
+        LocalDateTime maxexpireDate = now.plusDays(maxDays);
 
-        if (expireAt.isBefore(minExpireAt)) {
+        if (expireDate.isBefore(minexpireDate)) {
             throw new IllegalArgumentException(
                     "만료일은 최소 " + minDays + "일 이상이어야 합니다."
             );
         }
 
-        if (!expireAt.isBefore(maxExpireAt)) {
+        if (!expireDate.isBefore(maxexpireDate)) {
             throw new IllegalArgumentException(
                     "만료일은 최대 " + maxDays + "일 미만이어야 합니다."
             );

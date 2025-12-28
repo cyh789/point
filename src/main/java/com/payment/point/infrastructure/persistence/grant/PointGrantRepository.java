@@ -9,7 +9,7 @@ public interface PointGrantRepository extends JpaRepository<PointGrantEntity, Lo
         SELECT COALESCE(SUM(pg.remainingAmount), 0)
         FROM PointGrantEntity pg
         WHERE pg.userId = :userId
-          AND pg.expireAt > CURRENT_TIMESTAMP
+          AND pg.expireDate > CURRENT_TIMESTAMP
     """)
     int sumRemainingAmountByUserId(Long userId);
 }

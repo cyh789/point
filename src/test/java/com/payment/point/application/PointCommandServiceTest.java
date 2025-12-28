@@ -1,7 +1,10 @@
 package com.payment.point.application;
 
+import com.payment.point.api.request.CancelGrantRequest;
 import com.payment.point.api.request.GrantPointRequest;
 import com.payment.point.application.service.PointCommandService;
+import com.payment.point.domain.grant.PointGrant;
+import com.payment.point.infrastructure.persistence.grant.PointGrantEntity;
 import com.payment.point.infrastructure.persistence.grant.PointGrantRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,12 +13,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class PointCommandServiceTest {
+
+    private static final AtomicLong counter = new AtomicLong();
 
     @Autowired
     private PointCommandService pointCommandService;
@@ -28,19 +34,20 @@ class PointCommandServiceTest {
     void grantPoint_success() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        setRequest(request, 1L, 1000, "AUTO", null);
+        Long id = nextId();
+        setRequest(request, id, 1000L, "AUTO", null);
 
         // when
         var response = pointCommandService.grantPoint(request);
 
         // then
         assertThat(response.getGrantId()).isNotNull();
-        assertThat(response.getTotalAmount()).isEqualTo(1000);
-        assertThat(response.getRemainingAmount()).isEqualTo(1000);
+        assertThat(response.getGrantedAmount()).isEqualTo(1000L);
+        assertThat(response.getRemainingAmount()).isEqualTo(1000L);
         assertThat(response.getGrantType()).isEqualTo("AUTO");
 
-        int balance = pointGrantRepository.sumRemainingAmountByUserId(1L);
-        assertThat(balance).isEqualTo(1000);
+        int balance = pointGrantRepository.sumRemainingAmountByUserId(id);
+        assertThat(balance).isEqualTo(1000L);
     }
 
     @Test
@@ -48,7 +55,7 @@ class PointCommandServiceTest {
     void grantPoint_exceedMaxGrantPerOnce() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        setRequest(request, 1L, 200_000, "AUTO", null);
+        setRequest(request, nextId(), 200_000L, "AUTO", null);
 
         // when / then
         assertThatThrownBy(() -> pointCommandService.grantPoint(request))
@@ -61,11 +68,12 @@ class PointCommandServiceTest {
     void grantPoint_exceedMaxBalance() {
         // given
         GrantPointRequest first = new GrantPointRequest();
-        setRequest(first, 1L, 90_000, "AUTO", null);
+        Long id = nextId();
+        setRequest(first, id, 90_000L, "AUTO", null);
         pointCommandService.grantPoint(first);
 
         GrantPointRequest second = new GrantPointRequest();
-        setRequest(second, 1L, 90_000, "AUTO", null);
+        setRequest(second, id, 90_000L, "AUTO", null);
 
         // when / then
         assertThatThrownBy(() -> pointCommandService.grantPoint(second))
@@ -78,7 +86,7 @@ class PointCommandServiceTest {
     void grantPoint_manualGrant() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        setRequest(request, 2L, 5000, "MANUAL", null);
+        setRequest(request, nextId(), 5000L, "MANUAL", null);
 
         // when
         var response = pointCommandService.grantPoint(request);
@@ -92,14 +100,14 @@ class PointCommandServiceTest {
     void grantPoint_defaultExpireDate() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        setRequest(request, 3L, 1000, "AUTO", null);
+        setRequest(request, nextId(), 1000L, "AUTO", null);
         LocalDateTime beforeGrant = LocalDateTime.now();
 
         // when
         var response = pointCommandService.grantPoint(request);
 
         // then
-        assertThat(response.getExpireAt())
+        assertThat(response.getExpireDate())
                 .isNotNull()
                 .isAfterOrEqualTo(beforeGrant.plusDays(365))
                 .isBeforeOrEqualTo(beforeGrant.plusDays(366));
@@ -107,12 +115,12 @@ class PointCommandServiceTest {
 
     @Test
     @DisplayName("모든 포인트는 만료일이 존재하며, 만료일을 부여할 수 있다.")
-    void grantPoint_withExpireAt_success() {
+    void grantPoint_withExpireDate_success() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        LocalDateTime expireAt = LocalDateTime.now().plusDays(30);
+        LocalDateTime expireDate = LocalDateTime.now().plusDays(30);
 
-        setRequest(request, 4L, 1000, "AUTO", expireAt);
+        setRequest(request, nextId(), 1000L, "AUTO", expireDate);
         LocalDateTime beforeGrant = LocalDateTime.now();
 
         // when
@@ -120,18 +128,18 @@ class PointCommandServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        assertThat(response.getExpireAt()).isNotNull();
-        assertThat(response.getExpireAt()).isAfter(beforeGrant);
+        assertThat(response.getExpireDate()).isNotNull();
+        assertThat(response.getExpireDate()).isAfter(beforeGrant);
     }
 
     @Test
     @DisplayName("포인트의 만료일은 최소 1일 이상이어야 하며, 그렇지 않으면 예외가 발생한다")
-    void grantPoint_expireAt_lessThanOneDay_throwException() {
+    void grantPoint_expireDate_lessThanOneDay_throwException() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        LocalDateTime invalidExpireAt = LocalDateTime.now().plusHours(23);
+        LocalDateTime invalidExpireDate = LocalDateTime.now().plusHours(23);
 
-        setRequest(request, 5L, 1000, "AUTO", invalidExpireAt);
+        setRequest(request, nextId(), 1000L, "AUTO", invalidExpireDate);
 
         // when & then
         assertThatThrownBy(() -> pointCommandService.grantPoint(request))
@@ -141,12 +149,12 @@ class PointCommandServiceTest {
 
     @Test
     @DisplayName("포인트의 만료일은 최대 5년 미만이어야 하며, 이를 초과하면 예외가 발생한다")
-    void grantPoint_expireAt_overFiveYears_throwException() {
+    void grantPoint_expireDate_overFiveYears_throwException() {
         // given
         GrantPointRequest request = new GrantPointRequest();
-        LocalDateTime invalidExpireAt = LocalDateTime.now().plusYears(5);
+        LocalDateTime invalidExpireDate = LocalDateTime.now().plusYears(5);
 
-        setRequest(request, 6L, 1000, "AUTO", invalidExpireAt);
+        setRequest(request, nextId(), 1000L, "AUTO", invalidExpireDate);
 
         // when & then
         assertThatThrownBy(() -> pointCommandService.grantPoint(request))
@@ -156,32 +164,101 @@ class PointCommandServiceTest {
 
 
 
+    @Test
+    @DisplayName("사용되지 않은 적립은 취소 가능하다")
+    void cancelGrant_success() {
+        // given
+        GrantPointRequest request = new GrantPointRequest();
+        setRequest(request, nextId(), 1000L, "AUTO", null);
+
+        var response = pointCommandService.grantPoint(request);
+
+        // when
+        CancelGrantRequest cancelRequest = new CancelGrantRequest();
+        setReason(cancelRequest, "사용자 포인트 적립 취소");
+
+        var cancelResponse = pointCommandService.cancelGrant(response.getGrantId(), cancelRequest);
+
+        // then
+        assertThat(cancelResponse.getGrantedAmount()).isEqualTo(1000L);
+        assertThat(cancelResponse.getRemainingAmount()).isEqualTo(0L);
+        assertThat(cancelResponse.getStatus()).isEqualTo("CANCELED");
+        assertThat(cancelResponse.getReason()).isEqualTo("사용자 포인트 적립 취소");
+    }
+
+    @Test
+    @DisplayName("이미 사용된 적립은 취소할 수 없다")
+    void cancelGrant_fail_whenUsed() {
+        // given
+        GrantPointRequest request = new GrantPointRequest();
+        setRequest(request, nextId(), 1000L, "AUTO", null);
+
+        var response = pointCommandService.grantPoint(request);
+
+        // when
+        PointGrantEntity entity = pointGrantRepository.findById(response.getGrantId())
+                .orElseThrow();
+
+        PointGrant grant = entity.toDomain();
+        grant.use(100);
+
+        entity.use(100);
+        pointGrantRepository.save(entity);
+
+        assertThat(entity.getGrantedAmount()).isEqualTo(1000L);
+        assertThat(entity.getRemainingAmount()).isEqualTo(900L);
+        assertThat(entity.getStatus()).isEqualTo("USED_PARTIAL");
+
+        CancelGrantRequest cancelRequest = new CancelGrantRequest();
+
+        // then
+        assertThatThrownBy(() ->
+                pointCommandService.cancelGrant(response.getGrantId(), cancelRequest)
+        ).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("이미 사용되었거나 만료된 적립");
+    }
+
     private void setRequest(
             GrantPointRequest request,
             Long userId,
-            int amount,
+            Long amount,
             String grantType,
-            java.time.LocalDateTime expireAt
+            java.time.LocalDateTime expireDate
     ) {
         try {
             var userIdField = GrantPointRequest.class.getDeclaredField("userId");
             var amountField = GrantPointRequest.class.getDeclaredField("amount");
             var grantTypeField = GrantPointRequest.class.getDeclaredField("grantType");
-            var expireAtField = GrantPointRequest.class.getDeclaredField("expireAt");
+            var expireDateField = GrantPointRequest.class.getDeclaredField("expireDate");
 
             userIdField.setAccessible(true);
             amountField.setAccessible(true);
             grantTypeField.setAccessible(true);
-            expireAtField.setAccessible(true);
+            expireDateField.setAccessible(true);
 
             userIdField.set(request, userId);
             amountField.set(request, amount);
             grantTypeField.set(request, grantType);
-            expireAtField.set(request, expireAt);
+            expireDateField.set(request, expireDate);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+
+    private void setReason(CancelGrantRequest request, String reason) {
+        try {
+            var reasonField = CancelGrantRequest.class.getDeclaredField("reason");
+            reasonField.setAccessible(true);
+            reasonField.set(request, reason);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private long nextId() {
+        return counter.incrementAndGet();
     }
 
 }
