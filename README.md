@@ -23,30 +23,37 @@ application-dev.yml
 com.payment.point
 │
 ├── api                                # Presentation Layer
-│   ├── PointCommandController         # 포인트 적립 API
-│   └── request
-│       └── GrantPointRequest          # 적립 요청 DTO
+│   ├── controller
+│   │   └── PointGrantController
+│   ├── request
+│   │   └── GrantPointRequest
+│   └── response
+│       └── GrantPointResponse
 │
 ├── application                        # Application Layer
-│   └── PointCommandService            # 포인트 적립 유스케이스
+│   └── service
+│       └── PointCommandService        # 포인트 적립  
 │
 ├── domain                             # Domain Layer
-│   ├── grant
-│   │   └── PointGrant                 # 포인트 적립 도메인 개념
+│   ├── point                          # 포인트 적립
+│   │   └── PointGrant
 │   │
-│   └── policy
-│       ├── PointPolicy                # 포인트 정책 정의
-│       └── PointPolicyReader          # 정책 조회 및 변환 책임
+│   └── policy                         # 포인트 정책
+│       ├── PointPolicyReader
+│       ├── PointPolicyType
+│       └── PointPolicyValidator
 │
-└── infrastructure                    # Infrastructure Layer
-└── persistence
-├── grant
-│   ├── PointGrantEntity       # 포인트 적립 엔티티
-│   └── PointGrantJpaRepository
-│
-└── policy
-├── PointPolicyEntity      # 포인트 정책 엔티티
-└── PointPolicyJpaRepository
+└── infrastructure                     # Infrastructure Layer
+    └── persistence
+        ├── grant
+        │   ├── PointGrantEntity       # 포인트 적립
+        │   └── PointGrantRepository
+        │
+        └── policy
+            ├── PointPolicyEntity      # 포인트 정책
+            └── PointPolicyRepository
+
+
 ```
 
 ### devdb 테스트 샘플

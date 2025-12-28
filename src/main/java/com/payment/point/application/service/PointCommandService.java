@@ -1,11 +1,12 @@
-package com.payment.point.application;
+package com.payment.point.application.service;
 
 import com.payment.point.api.request.GrantPointRequest;
 import com.payment.point.api.response.PointGrantResponse;
-import com.payment.point.common.policy.PointPolicy;
-import com.payment.point.domain.model.PointGrant;
-import com.payment.point.infrastructure.persistence.entity.PointGrantEntity;
-import com.payment.point.infrastructure.persistence.repository.PointGrantRepository;
+import com.payment.point.domain.grant.PointGrant;
+import com.payment.point.domain.policy.PointPolicyReader;
+import com.payment.point.domain.policy.PointPolicyValidator;
+import com.payment.point.infrastructure.persistence.grant.PointGrantEntity;
+import com.payment.point.infrastructure.persistence.grant.PointGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,21 +17,23 @@ import java.time.LocalDateTime;
 public class PointCommandService {
 
     private final PointGrantRepository pointGrantRepository;
-    private final PointPolicy pointPolicy;
+    private final PointPolicyValidator pointPolicyValidator;
+    private final PointPolicyReader policyReader;
+
 
     @Transactional
     public PointGrantResponse grantPoint(GrantPointRequest request) {
 
         // 정책 검증
-        pointPolicy.validateGrantAmount(request.getAmount());
+        pointPolicyValidator.validateGrantAmount(request.getAmount());
 
         int currentBalance = pointGrantRepository.sumRemainingAmountByUserId(request.getUserId());
-        pointPolicy.validateMaxBalance(currentBalance + request.getAmount());
+        pointPolicyValidator.validateMaxPointBalance(currentBalance, request.getAmount());
 
-        // 만료일 결정
         LocalDateTime expireAt = request.getExpireAt() != null
                 ? request.getExpireAt()
-                : LocalDateTime.now().plusDays(pointPolicy.getDefaultExpireDays());
+                : LocalDateTime.now().plusDays(Long.parseLong(policyReader.getDefaultExpireDays()));
+        pointPolicyValidator.validateExpireAt(expireAt);
 
         // 도메인 객체 생성
         PointGrant grant = PointGrant.create(

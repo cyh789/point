@@ -1,6 +1,5 @@
-package com.payment.point.infrastructure.persistence.repository;
+package com.payment.point.infrastructure.persistence.grant;
 
-import com.payment.point.infrastructure.persistence.entity.PointGrantEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

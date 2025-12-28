@@ -1,4 +1,4 @@
-package com.payment.point.domain.model;
+package com.payment.point.domain.grant;
 
 import lombok.Getter;
 import java.time.LocalDateTime;

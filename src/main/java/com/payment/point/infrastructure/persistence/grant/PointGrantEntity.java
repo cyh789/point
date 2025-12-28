@@ -1,6 +1,6 @@
-package com.payment.point.infrastructure.persistence.entity;
+package com.payment.point.infrastructure.persistence.grant;
 
-import com.payment.point.domain.model.PointGrant;
+import com.payment.point.domain.grant.PointGrant;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

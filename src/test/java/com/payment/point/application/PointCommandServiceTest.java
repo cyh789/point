@@ -1,7 +1,8 @@
 package com.payment.point.application;
 
 import com.payment.point.api.request.GrantPointRequest;
-import com.payment.point.infrastructure.persistence.repository.PointGrantRepository;
+import com.payment.point.application.service.PointCommandService;
+import com.payment.point.infrastructure.persistence.grant.PointGrantRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +88,7 @@ class PointCommandServiceTest {
     }
 
     @Test
-    @DisplayName("만료일을 지정하지 않으면 기본 만료일(365일)이 설정된다")
+    @DisplayName("만료일을 지정하지 않으면 기본 만료일 365일이 설정된다")
     void grantPoint_defaultExpireDate() {
         // given
         GrantPointRequest request = new GrantPointRequest();
@@ -96,14 +97,64 @@ class PointCommandServiceTest {
 
         // when
         var response = pointCommandService.grantPoint(request);
-        LocalDateTime afterGrant = LocalDateTime.now();
 
         // then
+        assertThat(response.getExpireAt())
+                .isNotNull()
+                .isAfterOrEqualTo(beforeGrant.plusDays(365))
+                .isBeforeOrEqualTo(beforeGrant.plusDays(366));
+    }
+
+    @Test
+    @DisplayName("모든 포인트는 만료일이 존재하며, 만료일을 부여할 수 있다.")
+    void grantPoint_withExpireAt_success() {
+        // given
+        GrantPointRequest request = new GrantPointRequest();
+        LocalDateTime expireAt = LocalDateTime.now().plusDays(30);
+
+        setRequest(request, 4L, 1000, "AUTO", expireAt);
+        LocalDateTime beforeGrant = LocalDateTime.now();
+
+        // when
+        var response = pointCommandService.grantPoint(request);
+
+        // then
+        assertThat(response).isNotNull();
         assertThat(response.getExpireAt()).isNotNull();
         assertThat(response.getExpireAt()).isAfter(beforeGrant);
-        assertThat(response.getExpireAt())
-                .isBefore(afterGrant.plusDays(366));
     }
+
+    @Test
+    @DisplayName("포인트의 만료일은 최소 1일 이상이어야 하며, 그렇지 않으면 예외가 발생한다")
+    void grantPoint_expireAt_lessThanOneDay_throwException() {
+        // given
+        GrantPointRequest request = new GrantPointRequest();
+        LocalDateTime invalidExpireAt = LocalDateTime.now().plusHours(23);
+
+        setRequest(request, 5L, 1000, "AUTO", invalidExpireAt);
+
+        // when & then
+        assertThatThrownBy(() -> pointCommandService.grantPoint(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("만료일은 최소");
+    }
+
+    @Test
+    @DisplayName("포인트의 만료일은 최대 5년 미만이어야 하며, 이를 초과하면 예외가 발생한다")
+    void grantPoint_expireAt_overFiveYears_throwException() {
+        // given
+        GrantPointRequest request = new GrantPointRequest();
+        LocalDateTime invalidExpireAt = LocalDateTime.now().plusYears(5);
+
+        setRequest(request, 6L, 1000, "AUTO", invalidExpireAt);
+
+        // when & then
+        assertThatThrownBy(() -> pointCommandService.grantPoint(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("만료일은 최대");
+    }
+
+
 
     private void setRequest(
             GrantPointRequest request,
