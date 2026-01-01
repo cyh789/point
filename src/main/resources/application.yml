@@ -1,3 +1,26 @@
 spring:
-  application:
-    name: point
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+
+  output:
+    ansi:
+      enabled=always:
+
+  messages:
+    encoding: UTF-8

@@ -11,6 +11,7 @@ spring:
       path: /h2-console
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true
@@ -21,3 +22,10 @@ spring:
   sql:
     init:
       mode: always
+
+  output:
+    ansi:
+      enabled=always:
+
+  messages:
+    encoding: UTF-8
