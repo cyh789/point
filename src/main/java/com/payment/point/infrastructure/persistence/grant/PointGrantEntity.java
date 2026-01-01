@@ -2,7 +2,9 @@ package com.payment.point.infrastructure.persistence.grant;
 
 import com.payment.point.domain.grant.PointGrant;
 import com.payment.point.domain.grant.PointGrantStatus;
+import com.payment.point.domain.grant.PointGrantType;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,19 +13,19 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "point_grant")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointGrantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long grantId;
 
     private Long userId;
     private long grantedAmount;
     private long remainingAmount;
-    private String grantType;
+    private PointGrantType grantType;
     private LocalDateTime expireDate;
-    private String status;
+    private PointGrantStatus status;
     private String reason;
 
     public static PointGrantEntity from(PointGrant grant) {
@@ -33,33 +35,31 @@ public class PointGrantEntity {
         entity.remainingAmount = grant.getRemainingAmount();
         entity.grantType = grant.getGrantType();
         entity.expireDate = grant.getExpireDate();
+        entity.status = grant.getStatus();
+        entity.reason = grant.getReason();
         return entity;
     }
 
     public PointGrant toDomain() {
-        PointGrant grant = PointGrant.create(
+        return PointGrant.restore(
+                grantId,
                 userId,
                 grantedAmount,
+                remainingAmount,
                 grantType,
                 expireDate,
-                status
+                status,
+                reason
         );
-        return grant;
     }
 
-    public void cancel(String reason) {
-        this.status = String.valueOf(PointGrantStatus.CANCELED);
-        this.remainingAmount = 0;
-        this.reason = reason;
+    public void apply(PointGrant grant) {
+        this.remainingAmount = grant.getRemainingAmount();
+        this.status = grant.getStatus();
+        this.reason = grant.getReason();
     }
 
-    public void use(long amount) {
-        this.remainingAmount -= amount;
-
-        if (this.remainingAmount == 0) {
-            this.status = String.valueOf(PointGrantStatus.USED_ALL);
-        } else {
-            this.status = String.valueOf(PointGrantStatus.USED_PARTIAL);
-        }
+    public void setExpireDate(LocalDateTime expireDate) {
+        this.expireDate = expireDate;
     }
 }

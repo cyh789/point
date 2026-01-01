@@ -1,5 +1,6 @@
 package com.payment.point.api.request;
 
+import com.payment.point.domain.grant.PointGrantType;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
@@ -8,7 +9,7 @@ public class GrantPointRequest {
 
     private Long userId;
     private Long amount;
-    private String grantType; // AUTO, MANUAL
-    private LocalDateTime expireDate; // optional
-    private String reason; // optional
+    private PointGrantType grantType;
+    private LocalDateTime expireDate;
+    private String reason;
 }

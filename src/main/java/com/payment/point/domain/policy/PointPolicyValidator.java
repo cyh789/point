@@ -37,19 +37,24 @@ public class PointPolicyValidator {
         int minDays = Integer.parseInt(policyReader.getMinExpireDays());
         int maxDays = Integer.parseInt(policyReader.getMaxExpireDays());
 
-        LocalDateTime minexpireDate = now.plusDays(minDays);
-        LocalDateTime maxexpireDate = now.plusDays(maxDays);
+        LocalDateTime minExpireDate = now.plusDays(minDays);
+        LocalDateTime maxExpireDate = now.plusDays(maxDays);
 
-        if (expireDate.isBefore(minexpireDate)) {
+        if (expireDate.isBefore(minExpireDate)) {
             throw new IllegalArgumentException(
                     "만료일은 최소 " + minDays + "일 이상이어야 합니다."
             );
         }
-
-        if (!expireDate.isBefore(maxexpireDate)) {
+        if (!expireDate.isBefore(maxExpireDate)) {
             throw new IllegalArgumentException(
                     "만료일은 최대 " + maxDays + "일 미만이어야 합니다."
             );
+        }
+    }
+
+    public void validateUseAmount(long amount, long balance) {
+        if (amount <= 0 || amount > balance) {
+            throw new IllegalArgumentException("가용 포인트 잔액이 부족합니다.");
         }
     }
 }

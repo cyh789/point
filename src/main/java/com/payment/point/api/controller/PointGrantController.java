@@ -1,6 +1,7 @@
 package com.payment.point.api.controller;
 
-import com.payment.point.application.service.PointCommandService;
+import com.payment.point.api.request.CancelGrantRequest;
+import com.payment.point.application.service.PointService;
 import com.payment.point.api.request.GrantPointRequest;
 import com.payment.point.api.response.PointGrantResponse;
 import lombok.RequiredArgsConstructor;
@@ -8,15 +9,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/points")
 @RequiredArgsConstructor
+@RequestMapping("/points/grants")
 public class PointGrantController {
 
-    private final PointCommandService pointCommandService;
+    private final PointService pointService;
 
-    @PostMapping("/grant")
-    public ResponseEntity<PointGrantResponse> grantPoint(@RequestBody GrantPointRequest request) {
-        PointGrantResponse response = pointCommandService.grantPoint(request);
+    @PostMapping
+    public ResponseEntity<PointGrantResponse> grant(@RequestBody GrantPointRequest request) {
+        return ResponseEntity.ok(pointService.grantPoint(request));
+    }
+
+    @PostMapping("/{grantId}/cancel")
+    public ResponseEntity<PointGrantResponse> cancel(
+            @PathVariable Long grantId,
+            @RequestBody CancelGrantRequest request
+    ) {
+        PointGrantResponse response = pointService.cancelGrant(grantId, request);
         return ResponseEntity.ok(response);
     }
 }
